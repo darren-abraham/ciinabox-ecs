@@ -25,7 +25,7 @@ devAccess:
   - <%=my_public_ip%>
 
 # Upload a default ssl cert to AWS to be used by default to ciinabox service ELBs
-default_ssl_cert_id: "arn:aws:iam::<%= ciinabox_aws_account %>:server-certificate/ciinabox"
+default_ssl_cert_id: "arn:aws:iam::<%= ciinabox_aws_account %>:server-certificate/<%= ciinabox_name %>ciinabox"
 
 # Uncomment below to enable ciinabox environment scheduling
 # times are in UTC

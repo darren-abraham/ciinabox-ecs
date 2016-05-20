@@ -149,9 +149,9 @@ namespace :ciinabox do
     dns_domain = config['dns_domain']
     script = "
     openssl req -nodes -new -x509 -newkey rsa:4096 -days 3650 \
-      -keyout #{ciinaboxes_dir}/#{ciinabox_name}/ssl/ciinabox.key \
-      -out #{ciinaboxes_dir}/#{ciinabox_name}/ssl/ciinabox.crt \
-      -subj '/C=AU/ST=Melbourne/L=Melbourne/O=#{ciinabox_name}/OU=ciinabox/CN=*.#{dns_domain}'
+      -keyout #{ciinaboxes_dir}/#{ciinabox_name}/ssl/#{ciinabox_name}ciinabox.key \
+      -out #{ciinaboxes_dir}/#{ciinabox_name}/ssl/#{ciinabox_name}ciinabox.crt \
+      -subj '/C=AU/ST=Melbourne/L=Melbourne/O=#{ciinabox_name}/OU=cbox_name}iinabox/CN=*.#{dns_domain}'
     "
     result = `#{script}`
     puts result
@@ -164,10 +164,10 @@ namespace :ciinabox do
     cert_dir = "#{ciinaboxes_dir}/#{ciinabox_name}"
     status, result = aws_execute( config, [
       'iam', 'upload-server-certificate',
-      '--server-certificate-name ciinabox',
-      "--certificate-body file://#{cert_dir}/ssl/ciinabox.crt",
-      "--private-key file://#{cert_dir}/ssl/ciinabox.key",
-      "--certificate-chain file://#{cert_dir}/ssl/ciinabox.crt"
+      "--server-certificate-name #{ciinabox_name}ciinabox",
+      "--certificate-body file://#{cert_dir}/ssl/#{ciinabox_name}ciinabox.crt",
+      "--private-key file://#{cert_dir}/ssl/#{ciinabox_name}ciinabox.key",
+      "--certificate-chain file://#{cert_dir}/ssl/#{ciinabox_name}ciinabox.crt"
     ])
     if status > 0
       puts "fail to create or update IAM server-certificates. See error logs for details"
@@ -182,21 +182,21 @@ namespace :ciinabox do
     check_active_ciinabox(config)
     ciinabox_name = config['ciinabox_name']
     keypair_dir = "#{ciinaboxes_dir}/#{ciinabox_name}/ssl"
-    if File.exists?("#{keypair_dir}/ciinabox.pem")
+    if File.exists?("#{keypair_dir}/#{ciinabox_name}ciinabox.pem")
       puts "keypair for ciinabox #{ciinabox_name} already exists...please delete if you wish to re-create it"
       exit 1
     end
     status, result = aws_execute( config, ['ec2', 'create-key-pair',
-      "--key-name ciinabox",
+      "--key-name #{ciinabox_name}ciinabox",
       "--query 'KeyMaterial'",
       "--out text"
-    ], "#{keypair_dir}/ciinabox.pem")
+    ], "#{keypair_dir}/#{ciinabox_name}ciinabox.pem")
     puts result
     if status > 0
       puts "fail to create keypair see error logs for details"
       exit status
     else
-      result = `chmod 0600 #{keypair_dir}/ciinabox.pem`
+      result = `chmod 0600 #{keypair_dir}/#{ciinabox_name}ciinabox.pem`
       puts "Successfully created ciinabox ssh keypair"
     end
   end
@@ -218,7 +218,7 @@ namespace :ciinabox do
   task :create do
     check_active_ciinabox(config)
     status, result = aws_execute( config, ['cloudformation', 'create-stack',
-      '--stack-name ciinabox',
+      "--stack-name #{ciinabox_name}ciinabox",
       "--template-url https://#{config['source_bucket']}.s3.amazonaws.com/ciinabox/#{config['ciinabox_version']}/ciinabox.json",
       '--capabilities CAPABILITY_IAM'
     ])
@@ -268,7 +268,7 @@ namespace :ciinabox do
     STDOUT.puts "Are you sure you want to tear down the #{config['ciinabox_name']} ciinabox? (y/n)"
     input = STDIN.gets.strip
     if input == 'y'
-      status, result = aws_execute( config, ['cloudformation', 'delete-stack', '--stack-name ciinabox'] )
+      status, result = aws_execute( config, ['cloudformation', 'delete-stack', "--stack-name #{ciinabox_name}ciinabox"] )
       puts result
       if status > 0
         puts "fail to tear down ciinabox environment"
@@ -283,8 +283,8 @@ namespace :ciinabox do
 
   desc('SSH into your ciinabox environment')
   task :ssh do
-    keypair = "#{ciinaboxes_dir}/#{ciinabox_name}/ssl/ciinabox.pem"
-    `ssh-add #{ciinaboxes_dir}/#{ciinabox_name}/ssl/ciinabox.pem`
+    keypair = "#{ciinaboxes_dir}/#{ciinabox_name}/ssl/#{ciinabox_name}ciinabox.pem"
+    `ssh-add #{ciinaboxes_dir}/#{ciinabox_name}/ssl/#{ciinabox_name}ciinabox.pem`
     puts "# execute the following:"
     puts "ssh -A ec2-user@nata.#{config['dns_domain']} -i #{keypair}"
     puts "# and then"
